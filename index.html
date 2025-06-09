@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Player Selection</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0d0d0d;
+      margin: 0;
+      padding: 0;
+      color: white;
+    }
+
+    header {
+      background-color: #1a1a1a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+    }
+
+    .logo-container img {
+      height: 50px;
+      margin-right: 10px;
+    }
+
+    .header-text {
+      font-size: 18px;
+      color: #ff7700;
+      font-weight: bold;
+    }
+
+    .user-info {
+      font-size: 14px;
+      color: #ffffff;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 40px auto;
+      text-align: center;
+      background: #1a1a1a;
+      padding: 20px;
+      border-radius: 10px;
+      border: 1px solid #ff7700;
+    }
+
+    .player-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .player-box {
+      background-color: #262626;
+      padding: 20px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      border-radius: 8px;
+      color: white;
+      transition: transform 0.2s, border 0.2s;
+    }
+
+    .player-box.selected {
+      background-color: #ff7700;
+      font-weight: bold;
+      color: #ffffff;
+      border: 2px solid #ffffff;
+    }
+
+    .player-box:hover {
+      transform: scale(1.05);
+    }
+
+    .player-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .selected-players {
+      margin-top: 20px;
+    }
+
+    .selected-player-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 10px;
+    }
+
+    .selected-player-box {
+      background-color: #262626;
+      padding: 10px;
+      border: 1px solid #ff7700;
+      border-radius: 8px;
+      color: white;
+    }
+
+    .popup-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .popup {
+      background: #1a1a1a;
+      padding: 20px;
+      border-radius: 10px;
+      width: 300px;
+      text-align: center;
+      border: 1px solid #ff7700;
+      color: white;
+    }
+
+    .popup-player-list {
+      max-height: 200px;
+      overflow-y: auto;
+      margin: 10px 0;
+      text-align: left;
+    }
+
+    .popup-buttons button {
+      margin: 5px;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background-color: #ff7700;
+      color: #ffffff;
+      transition: background-color 0.3s;
+    }
+
+    .popup-buttons button:hover {
+      background: #e65c00;
+    }
+
+    .loader {
+      border: 5px solid #1a1a1a;
+      border-top: 5px solid #ff7700;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      margin: 10px auto;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo-container">
+      <img src="images/voiceit-logo.png" alt="Voice IT Logo" />
+      <span class="header-text">Voice-IT presents Cricket ATTAX 2.O</span>
+    </div>
+    <div class="user-info" id="user-info">Welcome, Player1</div>
+  </header>
+
+  <div class="container">
+    <h1>Select Your 11 Players</h1>
+    <div class="player-grid"></div>
+    <button id="enter-game-btn" disabled>Enter Game</button>
+
+    <div class="selected-players">
+      <h2>Selected Players</h2>
+      <div class="selected-player-grid"></div>
+    </div>
+  </div>
+
+  <div class="popup-overlay" style="display: none;">
+    <div class="popup">
+      <h2>Confirm Your Team</h2>
+      <div class="popup-player-list"></div>
+      <div class="popup-buttons">
+        <button id="confirm-btn">Confirm</button>
+        <button id="change-btn">Change Selection</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const playerGrid = document.querySelector('.player-grid');
+    const enterGameBtn = document.getElementById('enter-game-btn');
+    const popupOverlay = document.querySelector('.popup-overlay');
+    const popupPlayerList = document.querySelector('.popup-player-list');
+    const confirmBtn = document.getElementById('confirm-btn');
+    const changeBtn = document.getElementById('change-btn');
+
+    // Optional: Set user info dynamically
+    const userInfo = document.getElementById('user-info');
+    const storedUser = localStorage.getItem('user_email');
+    if (storedUser) {
+      userInfo.textContent = `Welcome, ${storedUser.split('@')[0]}`;
+    }
+
+    for (let i = 1; i <= 25; i++) {
+      const playerBox = document.createElement('div');
+      playerBox.classList.add('player-box');
+
+      const playerImg = document.createElement('img');
+      playerImg.src = `images/player${i}.jpg`;
+      playerImg.alt = `Player ${i}`;
+      playerImg.classList.add('player-image');
+
+      const playerOVR = Math.floor(Math.random() * 100);
+      playerBox.dataset.name = `Player ${i} (OVR: ${playerOVR})`;
+
+      playerBox.appendChild(playerImg);
+
+      playerBox.addEventListener('click', () => {
+        const selectedPlayers = document.querySelectorAll('.player-box.selected');
+
+        if (playerBox.classList.contains('selected')) {
+          playerBox.classList.remove('selected');
+        } else if (selectedPlayers.length < 11) {
+          playerBox.classList.add('selected');
+        } else {
+          alert('You can only select 11 players.');
+        }
+
+        const updatedSelectedPlayers = document.querySelectorAll('.player-box.selected');
+        enterGameBtn.disabled = updatedSelectedPlayers.length !== 11;
+
+        const selectedPlayerGrid = document.querySelector('.selected-player-grid');
+        selectedPlayerGrid.innerHTML = '';
+        updatedSelectedPlayers.forEach((player) => {
+          const selectedPlayerBox = document.createElement('div');
+          selectedPlayerBox.classList.add('selected-player-box');
+          selectedPlayerBox.textContent = player.dataset.name;
+          selectedPlayerGrid.appendChild(selectedPlayerBox);
+        });
+      });
+
+      playerGrid.appendChild(playerBox);
+    }
+
+    enterGameBtn.addEventListener('click', () => {
+      const selectedPlayers = document.querySelectorAll('.player-box.selected');
+      if (selectedPlayers.length !== 11) {
+        alert('Choose 11 players to continue.');
+        return;
+      }
+
+      popupPlayerList.innerHTML = '';
+      selectedPlayers.forEach((player) => {
+        const playerItem = document.createElement('div');
+        playerItem.textContent = player.dataset.name;
+        popupPlayerList.appendChild(playerItem);
+      });
+
+      popupOverlay.style.display = 'flex';
+    });
+
+    confirmBtn.addEventListener('click', () => {
+      const selectedPlayers = Array.from(document.querySelectorAll('.player-box.selected')).map(player => ({
+        name: player.dataset.name,
+        image: player.querySelector('img').src
+      }));
+
+      localStorage.setItem('selected_players', JSON.stringify(selectedPlayers));
+
+      popupOverlay.innerHTML = `
+        <div class="popup">
+          <h2>Loading...</h2>
+          <div class="loader"></div>
+          <p>Waiting for opponent to finish selecting...</p>
+        </div>
+      `;
+
+      setTimeout(() => {
+        window.location.href = 'toss.html';
+      }, 2000);
+    });
+
+    changeBtn.addEventListener('click', () => {
+      popupOverlay.style.display = 'none';
+    });
+  </script>
+</body>
+</html>
