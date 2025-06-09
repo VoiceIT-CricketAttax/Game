@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Toss Page</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0d0d0d;
+      margin: 0;
+      padding: 0;
+      color: white;
+    }
+
+    header {
+      background-color: #1a1a1a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+    }
+
+    .logo-container img {
+      height: 50px;
+      margin-right: 10px;
+    }
+
+    .header-text {
+      font-size: 18px;
+      color: #ff7700;
+      font-weight: bold;
+    }
+
+    .user-info {
+      font-size: 14px;
+      color: #ffffff;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      text-align: center;
+      background: #1a1a1a;
+      padding: 20px;
+      border-radius: 10px;
+      border: 1px solid #ff7700;
+    }
+
+    .toss-buttons button,
+    .bat-field-choice button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 18px;
+      cursor: pointer;
+      border: none;
+      background-color: #ff7700;
+      color: white;
+      border-radius: 5px;
+    }
+
+    .toss-result {
+      margin-top: 15px;
+      font-size: 20px;
+      font-weight: bold;
+      color: white;
+    }
+
+    .player-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .player-box,
+    .selected-player-box {
+      background-color: #262626;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+
+    .player-box img,
+    .selected-player-box img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo-container">
+      <img src="images/voiceit-logo.png" alt="Voice IT Logo" />
+      <span class="header-text">Voice-IT presents Cricket ATTAX 2.O</span>
+    </div>
+    <div class="user-info" id="user-info">Welcome, Player1</div>
+  </header>
+
+  <div class="container">
+    <h1>Toss</h1>
+    <div class="toss-buttons">
+      <button id="head-btn">Head</button>
+      <button id="tail-btn">Tail</button>
+    </div>
+    <div id="toss-result" class="toss-result"></div>
+
+    <div id="bat-field-choice" class="bat-field-choice" style="display: none;">
+      <button id="bat-btn">Bat</button>
+      <button id="field-btn">Field</button>
+    </div>
+
+    <h2>Your Team</h2>
+    <div id="players-grid" class="player-grid"></div>
+  </div>
+
+  <script>
+    const selectedPlayers = JSON.parse(localStorage.getItem('selected_players')) || [];
+    const playersGrid = document.getElementById('players-grid');
+    const headBtn = document.getElementById('head-btn');
+    const tailBtn = document.getElementById('tail-btn');
+    const tossResult = document.getElementById('toss-result');
+    const batFieldChoice = document.getElementById('bat-field-choice');
+    const batBtn = document.getElementById('bat-btn');
+    const fieldBtn = document.getElementById('field-btn');
+    const userInfo = document.getElementById('user-info');
+
+    if (localStorage.getItem('user_email')) {
+      userInfo.textContent = `Welcome, ${localStorage.getItem('user_email').split('@')[0]}`;
+    }
+
+    if (selectedPlayers.length === 0) {
+      playersGrid.textContent = 'No players selected!';
+    } else {
+      selectedPlayers.forEach(playerObj => {
+        const playerBox = document.createElement('div');
+        playerBox.classList.add('selected-player-box');
+
+        const img = document.createElement('img');
+        img.src = playerObj.image;
+        img.alt = playerObj.name;
+
+        playerBox.appendChild(img);
+        playersGrid.appendChild(playerBox);
+      });
+    }
+
+    function performToss(userChoice) {
+      headBtn.disabled = true;
+      tailBtn.disabled = true;
+      tossResult.textContent = 'Spinning the coin... 🌀';
+      setTimeout(() => {
+        const coin = Math.random() < 0.5 ? 'Head' : 'Tail';
+        const youWon = userChoice === coin;
+        tossResult.textContent = `Coin landed on ${coin}. ${youWon ? 'You have won the toss!' : 'Opponent has won the toss!'}`;
+
+        if (youWon) {
+          localStorage.setItem('tossWinner', 'player');
+          batFieldChoice.style.display = 'block';
+        } else {
+          localStorage.setItem('tossWinner', 'opponent');
+          const opponentChoice = Math.random() < 0.5 ? 'Bat' : 'Field';
+          localStorage.setItem('batOrField', opponentChoice);
+
+          setTimeout(() => {
+            alert(`Opponent chose to ${opponentChoice}. Moving to game...`);
+            window.location.href = 'game.html';
+          }, 2000);
+        }
+      }, 1500);
+    }
+
+    headBtn.addEventListener('click', () => performToss('Head'));
+    tailBtn.addEventListener('click', () => performToss('Tail'));
+
+    batBtn.addEventListener('click', () => {
+      localStorage.setItem('batOrField', 'Bat');
+      window.location.href = 'game.html';
+    });
+
+    fieldBtn.addEventListener('click', () => {
+      localStorage.setItem('batOrField', 'Field');
+      window.location.href = 'game.html';
+    });
+  </script>
+</body>
+</html>
