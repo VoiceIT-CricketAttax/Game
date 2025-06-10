@@ -63,7 +63,7 @@
     <h2>Login to Cricket Attax</h2>
     <input type="text" id="username" placeholder="Username" required />
     <input type="password" id="password" placeholder="Password" required />
-    <button onclick="handleLogin()">Login</button>
+    <button id="login-btn">Login</button>
     <div id="error-msg" class="error"></div>
   </div>
 
@@ -92,14 +92,15 @@
         .single();
 
       if (data) {
-        // Save session info
         localStorage.setItem('username', data.username);
-        localStorage.setItem('team_id', data.team_id || ''); // optional
+        localStorage.setItem('team_id', data.team_id || '');
         window.location.href = 'main.html';
       } else {
         errorMsg.textContent = 'Invalid username or password.';
       }
     }
+
+    document.getElementById("login-btn").addEventListener("click", handleLogin);
   </script>
 
 </body>
