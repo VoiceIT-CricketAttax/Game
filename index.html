@@ -51,9 +51,22 @@
       cursor: pointer;
     }
 
+    .show-pass-container {
+      margin-top: 5px;
+      font-size: 14px;
+    }
+
     .error {
       color: red;
       margin-top: 10px;
+    }
+
+    label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -63,6 +76,11 @@
     <h2>Login to Cricket Attax</h2>
     <input type="text" id="username" placeholder="Username" required />
     <input type="password" id="password" placeholder="Password" required />
+    
+    <div class="show-pass-container">
+      <label><input type="checkbox" id="show-password" /> Show Password</label>
+    </div>
+
     <button id="login-btn">Login</button>
     <div id="error-msg" class="error"></div>
   </div>
@@ -94,11 +112,23 @@
       if (data) {
         localStorage.setItem('username', data.username);
         localStorage.setItem('team_id', data.team_id || '');
-        window.location.href = 'main.html';
+        localStorage.setItem('is_admin', data.is_admin || false);
+      
+        if (data.is_admin) {
+          window.location.href = 'admin.html';
+        } else {
+          window.location.href = 'main.html';
+        }
       } else {
         errorMsg.textContent = 'Invalid username or password.';
       }
     }
+
+    // Show/hide password toggle
+    document.getElementById('show-password').addEventListener('change', function () {
+      const passwordInput = document.getElementById('password');
+      passwordInput.type = this.checked ? 'text' : 'password';
+    });
 
     document.getElementById("login-btn").addEventListener("click", handleLogin);
   </script>
