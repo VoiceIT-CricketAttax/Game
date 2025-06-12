@@ -96,31 +96,36 @@
       const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value.trim();
       const errorMsg = document.getElementById('error-msg');
-
+    
       if (!username || !password) {
         errorMsg.textContent = 'Please enter both username and password.';
         return;
       }
-
+    
       const { data, error } = await supabase
         .from('logins')
         .select('*')
         .eq('username', username)
         .eq('password', password);
-        //.single();
-
-      if (data) {
-        localStorage.setItem('username', data.username);
-        localStorage.setItem('team_id', data.team_id || '');
-        localStorage.setItem('is_admin', data.is_admin || false);
-      
-        if (data.is_admin) {
-          window.location.href = 'admin.html';
-        } else {
-          window.location.href = 'main.html';
-        }
-      } else {
+    
+      console.log('Data:', data);
+      console.log('Error:', error);
+    
+      if (error || !data || data.length === 0) {
         errorMsg.textContent = 'Invalid username or password.';
+        return;
+      }
+    
+      const user = data[0]; // take first matched row
+    
+      localStorage.setItem('username', user.username);
+      localStorage.setItem('team_id', user.team_id || '');
+      localStorage.setItem('is_admin', user.is_admin || false);
+    
+      if (user.is_admin) {
+        window.location.href = 'admin.html';
+      } else {
+        window.location.href = 'main.html';
       }
     }
 
@@ -131,6 +136,11 @@
     });
 
     document.getElementById("login-btn").addEventListener("click", handleLogin);
+    document.getElementById("login-btn").addEventListener("click", async () => {
+  console.log("Logging in...");
+  await handleLogin();
+});
+
   </script>
 
 </body>
