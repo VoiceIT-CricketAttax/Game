@@ -106,8 +106,8 @@
         .from('logins')
         .select('*')
         .eq('username', username)
-        .eq('password', password)
-        .single();
+        .eq('password', password);
+        //.single();
 
       if (data) {
         localStorage.setItem('username', data.username);
