@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel | Cricket Attax</title>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #0d0d0d;
+      color: white;
+      margin: 0;
+      padding: 20px;
+    }
+
+    header {
+      background-color: #1a1a1a;
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #ff7700;
+    }
+
+    header h1 {
+      color: #ff7700;
+    }
+
+    .section {
+      background-color: #1a1a1a;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(255, 119, 0, 0.2);
+    }
+
+    h2 {
+      color: #ff7700;
+      margin-bottom: 10px;
+    }
+
+    label, select, button {
+      display: block;
+      margin-top: 10px;
+      margin-bottom: 15px;
+    }
+
+    select, button {
+      padding: 10px;
+      width: 100%;
+      border-radius: 5px;
+      border: none;
+    }
+
+    button {
+      background-color: #ff7700;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #e65c00;
+    }
+
+    #live-bid-info {
+      background: #262626;
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    ul#audit-log {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    ul#audit-log li {
+      padding: 8px;
+      border-bottom: 1px solid #333;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Admin Control Panel</h1>
+    <div id="admin-user">Logged in as Admin</div>
+  </header>
+
+  <!-- 1. Manual Game Winner Override -->
+  <div class="section">
+    <h2>Game Outcome Override</h2>
+    <label for="winner-team">Select Winning Team</label>
+    <select id="winner-team"></select>
+    <button onclick="overrideWinner()">Set as Winner</button>
+  </div>
+
+  <!-- 2. Live Bidding Display -->
+  <div class="section">
+    <h2>Live Bidding</h2>
+    <div id="live-bid-info">Loading latest bid...</div>
+  </div>
+
+  <!-- 3. Audit Log -->
+  <div class="section">
+    <h2>Admin Action Log</h2>
+    <ul id="audit-log"></ul>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+    const supabaseUrl = 'https://cvlynljwflfjhpjjnwgk.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN2bHlubGp3Zmxmamhwampud2drIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzMjIwOTMsImV4cCI6MjA2Mzg5ODA5M30.z7B9m9SfPChjUDygwc-0SYymDlO8YGBHLURM8OzFjdw'; // REPLACE with actual service_role or anon key with proper permissions
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    async function fetchLiveBid() {
+      const { data, error } = await supabase.from('current_auction').select('*').eq('id', 1).single();
+      const liveDiv = document.getElementById('live-bid-info');
+      if (data) {
+        liveDiv.innerHTML = `Player: <strong>${data.player_name}</strong><br>Base Price: ₹ ${(data.base_price / 10000000).toFixed(2)} Cr`;
+      }
+      setTimeout(fetchLiveBid, 3000);
+    }
+
+    async function overrideWinner() {
+      const team = document.getElementById('winner-team').value;
+      const { error } = await supabase.from('match_control').upsert({ id: 1, winner: team });
+      await logAdminAction(`Manually set ${team} as match winner.`);
+      alert(error ? "Failed to override winner." : `Winner overridden to ${team}`);
+    }
+
+    async function fillWinnerDropdown() {
+      const { data } = await supabase.from('teams').select('name');
+      const dropdown = document.getElementById('winner-team');
+      dropdown.innerHTML = '';
+      data?.forEach(team => {
+        const opt = document.createElement('option');
+        opt.value = team.name;
+        opt.textContent = team.name;
+        dropdown.appendChild(opt);
+      });
+    }
+
+    async function logAdminAction(actionText) {
+      await supabase.from('admin_logs').insert({
+        action: actionText,
+        timestamp: new Date().toISOString()
+      });
+      displayAuditLog();
+    }
+
+    async function displayAuditLog() {
+      const { data } = await supabase.from('admin_logs').select('*').order('timestamp', { ascending: false }).limit(10);
+      const logList = document.getElementById('audit-log');
+      logList.innerHTML = '';
+      data?.forEach(log => {
+        const li = document.createElement('li');
+        li.textContent = `${new Date(log.timestamp).toLocaleString()} - ${log.action}`;
+        logList.appendChild(li);
+      });
+    }
+
+    fetchLiveBid();
+    fillWinnerDropdown();
+    displayAuditLog();
+  </script>
+</body>
+</html>
