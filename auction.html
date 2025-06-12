@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cricket Attax - Auction</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Segoe UI", sans-serif;
+    }
+
+    body {
+      background-color: #0d0d0d;
+      color: white;
+      padding: 20px;
+    }
+
+    header.top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #1a1a1a;
+      padding: 15px 25px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      position: sticky;
+      top: 0;
+      z-index: 999;
+    }
+
+    .menu-icon {
+      font-size: 24px;
+      color: #ff6600;
+      cursor: pointer;
+    }
+
+    .wallet {
+      font-weight: bold;
+      font-size: 18px;
+      color: #ff9933;
+    }
+
+    .error-message {
+      color: red;
+      font-size: 14px;
+      display: none;
+    }
+
+    .auction-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .player-card, .bid-section, .mid-panel {
+      background-color: #1a1a1a;
+      padding: 20px;
+      border-radius: 15px;
+      flex: 1 1 300px;
+      min-width: 300px;
+    }
+
+    .player-img {
+      width: 100%;
+      height: auto;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+
+    .player-info p {
+      margin: 8px 0;
+    }
+
+    .your-players h3 {
+      margin-bottom: 10px;
+      color: #ff9933;
+    }
+
+    #yourPlayerList li {
+      list-style: none;
+      background-color: #262626;
+      padding: 8px;
+      margin: 5px 0;
+      border-radius: 8px;
+    }
+
+    .bid-section h2 {
+      color: #ff6600;
+      margin-bottom: 10px;
+    }
+
+    .bid-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 15px 0;
+      gap: 10px;
+    }
+
+    .bid-controls button {
+      padding: 10px 20px;
+      font-size: 18px;
+      background-color: #ff6600;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .bid-controls button:hover {
+      background-color: #e65c00;
+    }
+
+    #bidAmount {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    #submitBid, #buyPlayerBtn {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      background-color: #ff6600;
+      border: none;
+      border-radius: 10px;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    #submitBid:hover, #buyPlayerBtn:hover {
+      background-color: #e65c00;
+    }
+
+    label {
+      display: flex;
+      align-items: center;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    input[type="checkbox"] {
+      margin-right: 8px;
+      transform: scale(1.2);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header class="top-bar">
+    <div class="menu-icon">≡</div>
+    <div class="wallet">₹ Wallet Amount: <span id="walletAmount">100 Cr</span></div>
+    <div class="error-message" id="errorMessage">Greedily bid and lost</div>
+  </header>
+
+  <!-- Auction Area -->
+  <main class="auction-container">
+
+    <!-- Current Player -->
+    <section class="player-card">
+      <h2>Current Player</h2>
+      <div class="player-info">
+        <img src="player.jpg" alt="Player Image" class="player-img">
+        <p>Name: <span id="playerName">Player 1</span></p>
+        <p>Base Price: ₹ <span id="basePrice">2 Cr</span></p>
+        <p>Highest Bidder: <span id="highestBidder">None</span></p>
+        <button id="buyPlayerBtn">Buy Player</button>
+      </div>
+    </section>
+
+    <!-- Your Players -->
+    <section class="mid-panel">
+      <div class="your-players">
+        <h3>Your Players</h3>
+        <ul id="yourPlayerList"></ul>
+      </div>
+    </section>
+
+    <!-- Bidding -->
+    <section class="bid-section">
+      <h2>Place Your Bid</h2>
+      <p>Current Price: ₹ <span id="currentPrice">2 Cr</span></p>
+      <p>Min Increment: ₹ 1 Lakh</p>
+      <div class="bid-controls">
+        <button id="decreaseBid">-</button>
+        <span id="bidAmount">2 Cr</span>
+        <button id="increaseBid">+</button>
+      </div>
+      <button id="submitBid">Submit Bid</button>
+      <label><input type="checkbox" id="autoBidDisable"> Disable Auto-Bid</label>
+    </section>
+
+  </main>
+
+  <script>
+    // Initial values
+    let wallet = 1000000000; // 100 Cr in paise
+    let currentBid = 20000000; // 2 Cr
+    let minIncrement = 100000; // 1 Lakh
+
+    const walletAmountEl = document.getElementById("walletAmount");
+    const currentPriceEl = document.getElementById("currentPrice");
+    const bidAmountEl = document.getElementById("bidAmount");
+    const highestBidderEl = document.getElementById("highestBidder");
+    const errorMessageEl = document.getElementById("errorMessage");
+    const yourPlayerListEl = document.getElementById("yourPlayerList");
+
+    function formatMoney(paise) {
+      return (paise / 10000000).toFixed(2) + " Cr";
+    }
+
+    function updateWalletDisplay() {
+      walletAmountEl.textContent = formatMoney(wallet);
+    }
+
+    document.getElementById("increaseBid").addEventListener("click", () => {
+      currentBid += minIncrement;
+      bidAmountEl.textContent = formatMoney(currentBid);
+    });
+
+    document.getElementById("decreaseBid").addEventListener("click", () => {
+      if (currentBid - minIncrement >= minIncrement) {
+        currentBid -= minIncrement;
+        bidAmountEl.textContent = formatMoney(currentBid);
+      }
+    });
+
+    document.getElementById("submitBid").addEventListener("click", () => {
+      if (currentBid > wallet) {
+        errorMessageEl.style.display = "block";
+        errorMessageEl.textContent = "You don't have enough balance!";
+        return;
+      }
+      highestBidderEl.textContent = "You";
+      currentPriceEl.textContent = formatMoney(currentBid);
+      errorMessageEl.style.display = "none";
+    });
+
+    document.getElementById("buyPlayerBtn").addEventListener("click", () => {
+      if (currentBid > wallet) {
+        errorMessageEl.style.display = "block";
+        errorMessageEl.textContent = "Greedily bid and lost";
+        return;
+      }
+
+      wallet -= currentBid;
+      updateWalletDisplay();
+      const li = document.createElement("li");
+      li.textContent = document.getElementById("playerName").textContent + " - " + formatMoney(currentBid);
+      yourPlayerListEl.appendChild(li);
+
+      highestBidderEl.textContent = "None";
+      currentBid = 20000000;
+      currentPriceEl.textContent = formatMoney(currentBid);
+      bidAmountEl.textContent = formatMoney(currentBid);
+      errorMessageEl.style.display = "none";
+    });
+
+    updateWalletDisplay(); // Initialize wallet display
+  </script>
+</body>
+</html>
