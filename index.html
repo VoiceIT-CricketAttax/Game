@@ -92,7 +92,7 @@
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN2bHlubGp3Zmxmamhwampud2drIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzMjIwOTMsImV4cCI6MjA2Mzg5ODA5M30.z7B9m9SfPChjUDygwc-0SYymDlO8YGBHLURM8OzFjdw';
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    async function handleLogin() {
+       async function handleLogin() {
       const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value.trim();
       const errorMsg = document.getElementById('error-msg');
@@ -102,30 +102,41 @@
         return;
       }
     
-      const { data, error } = await supabase
-        .from('logins')
-        .select('*')
-        .eq('username', username)
-        .eq('password', password);
+      try {
+        const { data, error } = await supabase
+          .from('logins')
+          .select('*')
+          .eq('username', username)
+          .eq('password', password);
     
-      console.log('Data:', data);
-      console.log('Error:', error);
+        if (error) {
+          console.error("Supabase error:", error.message);
+          errorMsg.textContent = "Error connecting to database.";
+          return;
+        }
     
-      if (error || !data || data.length === 0) {
-        errorMsg.textContent = 'Invalid username or password.';
-        return;
-      }
+        if (!data || data.length === 0) {
+          errorMsg.textContent = 'Invalid username or password.';
+          return;
+        }
     
-      const user = data[0]; // take first matched row
+        const user = data[0];
     
-      localStorage.setItem('username', user.username);
-      localStorage.setItem('team_id', user.team_id || '');
-      localStorage.setItem('is_admin', user.is_admin || false);
+        // Save to local storage
+        localStorage.setItem('username', user.username);
+        localStorage.setItem('team_id', user.team_id || '');
+        localStorage.setItem('is_admin', user.is_admin === true ? 'true' : 'false');
     
-      if (user.is_admin) {
-        window.location.href = 'admin.html';
-      } else {
-        window.location.href = 'main.html';
+        // Redirect
+        if (user.is_admin === true) {
+          window.location.href = 'admin.html';
+        } else {
+          window.location.href = 'main.html';
+        }
+    
+      } catch (e) {
+        console.error("Unexpected error:", e);
+        errorMsg.textContent = 'Something went wrong. Try again.';
       }
     }
 
